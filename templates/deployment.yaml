@@ -14,7 +14,6 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        rollme: {{ randAlphaNum 5 | quote }} # since by default we're not changing anything on re-deploy of "latest", force the rolling deploy
       labels:
         {{- include "awx-proxy-chart.selectorLabels" . | nindent 8 }}
     spec:

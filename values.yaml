@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: chrisjohnson00/awx_proxy
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
 imagePullSecrets: []
 nameOverride: "awx-proxy"
