@@ -5,6 +5,8 @@ metadata:
   name: {{ include "awx-proxy-chart.fullname" . }}
   labels:
     {{- include "awx-proxy-chart.labels" . | nindent 4 }}
+    version: {{ .Chart.AppVersion }}
+    app: {{ include "awx-proxy-chart.fullname" . }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -12,10 +14,10 @@ spec:
       {{- include "awx-proxy-chart.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
       labels:
         {{- include "awx-proxy-chart.selectorLabels" . | nindent 8 }}
+        version: {{ .Chart.AppVersion }}
+        app: {{ include "awx-proxy-chart.fullname" . }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -28,7 +30,7 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
+          image: '{{ .Values.image.repository }}:{{ .Chart.AppVersion }}'
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
@@ -36,17 +38,18 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /
+              path: {{ .Values.liveness }}
               port: http
           readinessProbe:
             httpGet:
-              path: /
+              path: {{ .Values.readiness }}
               port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          volumeMounts:
-            - name: {{ $name }}-config
-              mountPath: /usr/src/app/instance
+          {{- with .Values.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -59,7 +62,3 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-      volumes:
-        - name: {{ $name }}-config
-          configMap:
-            name: {{ $name }}
